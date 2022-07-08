@@ -35,6 +35,8 @@ def handle_iface(name, is_ipv4, type, config, result):
         result[network]['Network']['Gateway'] = config['gateway']
     if 'hwaddress ether' in config:
         result[network]['Link']['MACAddress'] = config['hwaddress ether']
+    if 'mtu' in config:
+        result[network]['Link']['MTUBytes'] = config['mtu']
 
     if type == 'dhcp':
         if 'DHCP' in result[network]['Network']:

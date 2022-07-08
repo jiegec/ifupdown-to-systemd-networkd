@@ -9,6 +9,8 @@ def test_simple():
         address 192.168.0.100
         netmask 255.255.255.0
         gateway 192.168.0.1
+        hwaddress ether 00:11:22:33:44:55
+        mtu 1024
     '''
 
     f = io.StringIO(config)
@@ -18,3 +20,5 @@ def test_simple():
     assert network['Match']['Name'] == 'eth0'
     assert network['Network']['Address'] == '192.168.0.100/24'
     assert network['Network']['Gateway'] == '192.168.0.1'
+    assert network['Link']['MTUBytes'] == '1024'
+    assert network['Link']['MACAddress'] == '00:11:22:33:44:55'

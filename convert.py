@@ -56,40 +56,45 @@ def handle_iface(name, is_ipv4, type, config, result):
     return result
 
 
+def convert_file(f, result):
+    current_iface = None
+    current_ipv4 = True
+    current_type = 'static'
+    current_configs = {}
+    for line in f:
+        line = line.strip()
+        parts = line.split(' ')
+
+        # comments
+        if line.startswith('#'):
+            continue
+        elif line.startswith('iface'):
+            if current_iface is not None:
+                result = handle_iface(
+                    current_iface, current_ipv4, current_type, current_configs, result)
+                current_configs = {}
+
+            current_iface = parts[1]
+            current_ipv4 = parts[2] == 'inet'
+            current_type = parts[3]
+        elif current_iface is not None:
+            key = ' '.join(parts[:-1])
+            value = parts[-1]
+            current_configs[key] = value
+    if current_iface is not None:
+        result = handle_iface(
+            current_iface, current_ipv4, current_type, current_configs, result)
+        current_configs = {}
+    return result
+
+
 def convert(interfaces, output):
     print("Converting {} to systemd-networkd configs in {}".format(
         interfaces, output))
     # filename -> dict
     result = AutoVivification()
     with open(interfaces, 'r') as f:
-        current_iface = None
-        current_ipv4 = True
-        current_type = 'static'
-        current_configs = {}
-        for line in f:
-            line = line.strip()
-            parts = line.split(' ')
-
-            # comments
-            if line.startswith('#'):
-                continue
-            elif line.startswith('iface'):
-                if current_iface is not None:
-                    result = handle_iface(
-                        current_iface, current_ipv4, current_type, current_configs, result)
-                    current_configs = {}
-
-                current_iface = parts[1]
-                current_ipv4 = parts[2] == 'inet'
-                current_type = parts[3]
-            elif current_iface is not None:
-                key = ' '.join(parts[:-1])
-                value = parts[-1]
-                current_configs[key] = value
-        if current_iface is not None:
-            result = handle_iface(
-                current_iface, current_ipv4, current_type, current_configs, result)
-            current_configs = {}
+        result = convert_file(f, result)
     for file in result:
         # https://stackoverflow.com/a/23836686/2148614
         config = configparser.ConfigParser()

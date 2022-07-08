@@ -21,7 +21,7 @@ class AutoVivification(dict):
             return value
 
 
-def handle_iface(name, is_ipv4, type, config, result):
+def handle_iface(name, is_ipv4, dhcp, config, result):
     network = '{}.network'.format(name)
     netdev = '{}.netdev'.format(name)
     # Match Block
@@ -48,6 +48,24 @@ def handle_iface(name, is_ipv4, type, config, result):
     if 'mtu' in config:
         result[network]['Link']['MTUBytes'] = config['mtu']
 
+    # VLAN:
+    if '.' in name:
+        index = name.rfind('.')
+        device = name[:index]
+        vlan_id = int(name[index+1:])
+
+        result[netdev]['NetDev']['Name'] = name
+        result[netdev]['NetDev']['Kind'] = 'vlan'
+        result[netdev]['VLAN']['Id'] = vlan_id
+
+        # append to list of vlan interfaces
+        vlan = result['{}.network'.format(device)]['Network']['VLAN']
+        if type(vlan) is AutoVivification:
+            vlan = [name]
+        else:
+            vlan.append(name)
+        result['{}.network'.format(device)]['Network']['VLAN'] = vlan
+
     # Bonding
     if 'bond-slaves' in config:
         result[netdev]['NetDev']['Name'] = name
@@ -70,7 +88,7 @@ def handle_iface(name, is_ipv4, type, config, result):
         result[netdev]['Bond']['BondAdSelect'] = config['ad_select']
 
     # DHCP
-    if type == 'dhcp':
+    if dhcp == 'dhcp':
         if 'DHCP' in result[network]['Network']:
             current = result[network]['Network']['DHCP']
         else:
@@ -130,16 +148,22 @@ def convert(interfaces, output):
     with open(interfaces, 'r') as f:
         result = convert_file(f, result)
     for file in result:
-        # https://stackoverflow.com/a/23836686/2148614
-        config = configparser.ConfigParser()
-        config.optionxform = str
+        # configparse do not support repeated keys
+        # let's do it ourselves
+        data = ''
+        for section in result[file]:
+            data += '[{}]\n'.format(section)
 
-        config.read_dict(result[file])
-        with io.StringIO() as f:
-            config.write(f)
-
-            f.seek(0)
-            data = f.read()
+            content = result[file][section]
+            for key in content:
+                value = content[key]
+                if type(value) is list:
+                    # repeat each value
+                    for val in value:
+                        data += '{} = {}\n'.format(key, val)
+                else:
+                    data += '{} = {}\n'.format(key, value)
+            data += '\n'
 
         dest = os.path.join(output, file)
 

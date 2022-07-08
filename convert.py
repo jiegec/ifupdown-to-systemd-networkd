@@ -23,21 +23,41 @@ class AutoVivification(dict):
 
 def handle_iface(name, is_ipv4, type, config, result):
     network = '{}.network'.format(name)
+    netdev = '{}.netdev'.format(name)
     # Match Block
     result[network]['Match']['Name'] = name
 
     # Configs
     if 'address' in config and 'netmask' in config:
+        # address and netmask
         netmask = ipaddress.IPv4Network('0.0.0.0/{}'.format(config['netmask']))
         result[network]['Network']['Address'] = '{}/{}'.format(
             config['address'], netmask.prefixlen)
+    elif 'address' in config:
+        # only address
+        result[network]['Network']['Address'] = config['address']
+
     if 'gateway' in config:
         result[network]['Network']['Gateway'] = config['gateway']
-    if 'hwaddress ether' in config:
-        result[network]['Link']['MACAddress'] = config['hwaddress ether']
+    if 'hwaddress' in config:
+        value = config['hwaddress']
+        parts = value.split(' ')
+        # hwaddress ether
+        if parts[0] == 'ether':
+            result[network]['Link']['MACAddress'] = parts[1]
     if 'mtu' in config:
         result[network]['Link']['MTUBytes'] = config['mtu']
 
+    # Bonding
+    if 'bond-slaves' in config:
+        result[netdev]['NetDev']['Name'] = name
+        result[netdev]['NetDev']['Kind'] = 'bond'
+
+        # add slaves
+        for intf in config['bond-slaves'].split(' '):
+            result['{}.network'.format(intf)]['Network']['Bond'] = name
+
+    # DHCP
     if type == 'dhcp':
         if 'DHCP' in result[network]['Network']:
             current = result[network]['Network']['DHCP']
@@ -80,8 +100,8 @@ def convert_file(f, result):
             current_ipv4 = parts[2] == 'inet'
             current_type = parts[3]
         elif current_iface is not None:
-            key = ' '.join(parts[:-1])
-            value = parts[-1]
+            key = parts[0]
+            value = ' '.join(parts[1:])
             current_configs[key] = value
     if current_iface is not None:
         result = handle_iface(

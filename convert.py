@@ -58,13 +58,19 @@ def handle_iface(name, is_ipv4, dhcp, config, result):
         result[netdev]['NetDev']['Kind'] = 'vlan'
         result[netdev]['VLAN']['Id'] = vlan_id
 
+        raw_network = '{}.network'.format(device)
+
+        # Ensure Match is set
+        result[raw_network]['Match']['Name'] = device
+
         # append to list of vlan interfaces
-        vlan = result['{}.network'.format(device)]['Network']['VLAN']
+        vlan = result[raw_network]['Network']['VLAN']
         if type(vlan) is AutoVivification:
             vlan = [name]
         else:
             vlan.append(name)
-        result['{}.network'.format(device)]['Network']['VLAN'] = vlan
+        result[raw_network]['Network']['VLAN'] = vlan
+
 
     # Bonding
     if 'bond-slaves' in config:

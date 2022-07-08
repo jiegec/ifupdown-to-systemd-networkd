@@ -56,6 +56,18 @@ def handle_iface(name, is_ipv4, type, config, result):
         # add slaves
         for intf in config['bond-slaves'].split(' '):
             result['{}.network'.format(intf)]['Network']['Bond'] = name
+    if 'bond-xmit-hash-policy' in config:
+        result[netdev]['Bond']['TransmitHashPolicy'] = config['bond-xmit-hash-policy']
+    if 'bond-mode' in config:
+        result[netdev]['Bond']['Mode'] = config['bond-mode']
+    if 'bond-miimon' in config:
+        result[netdev]['Bond']['MIIMonitorSec'] = float(config['bond-miimon']) / 1000
+    if 'bond-lacp-rate' in config:
+        result[netdev]['Bond']['LACPTransmitRate'] = config['bond-lacp-rate']
+    if 'ad_actor_sys_prio' in config:
+        result[netdev]['Bond']['AdActorSystemPriority'] = config['ad_actor_sys_prio']
+    if 'ad_select' in config:
+        result[netdev]['Bond']['BondAdSelect'] = config['ad_select']
 
     # DHCP
     if type == 'dhcp':

@@ -42,3 +42,24 @@ def test_bonding():
 
     network = result['eth2.network']
     assert network['Network']['Bond'] == 'bond0'
+
+def test_vlan():
+    config = '''
+    auto eth0.123
+    iface eth0.123 inet static
+        address 192.168.0.1/24
+    '''
+
+    f = io.StringIO(config)
+
+    result = convert.convert_file(f, convert.AutoVivification())
+    network = result['eth0.network']
+    assert network['Network']['VLAN'] == ['eth0.123']
+
+    network = result['eth0.123.network']
+    assert network['Network']['Address'] == '192.168.0.1/24'
+
+    netdev = result['eth0.123.netdev']
+    assert netdev['NetDev']['Name'] == 'eth0.123'
+    assert netdev['NetDev']['Kind'] == 'vlan'
+    assert netdev['VLAN']['Id'] == 123

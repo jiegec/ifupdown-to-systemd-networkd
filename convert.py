@@ -276,6 +276,9 @@ class Converter:
     def get_routes(self):
         """Collect custom table names from /etc/iproute2/rt_tables"""
         result = {}
+        if not os.path.exists(self.tables):
+            return result
+
         with open(self.tables, 'r') as f:
             for line in f:
                 line = line.strip()

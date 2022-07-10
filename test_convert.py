@@ -91,3 +91,18 @@ def test_custom_routes():
 
     assert network['RoutingPolicyRule'][0]['From'] == '192.168.0.2'
     assert network['RoutingPolicyRule'][0]['Table'] == 'some_table'
+
+def test_duplicate_vlan():
+    config = '''
+    auto eth0.123
+    iface eth0.123 inet static
+        address 192.168.0.1/24
+    iface eth0.123 inet6 static
+    '''
+
+    f = io.StringIO(config)
+
+    result = convert.convert_file(f, convert.AutoVivification())
+    network = result['eth0.network']
+    assert network['Match']['Name'] == 'eth0'
+    assert network['Network']['VLAN'] == ['eth0.123']

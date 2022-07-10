@@ -93,7 +93,7 @@ def handle_iface(name: str, is_ipv4: bool, dhcp: str, config: typing.DefaultDict
         vlan = result[raw_network]['Network']['VLAN']
         if type(vlan) is AutoVivification:
             vlan = [name]
-        else:
+        elif name not in vlan:
             vlan.append(name)
         result[raw_network]['Network']['VLAN'] = vlan
 

@@ -36,7 +36,7 @@ class Converter:
             self.use_table_name = False
         self.convert()
 
-    def handle_iface(self, name: str, is_ipv4: bool, dhcp: str,
+    def handle_iface(self, name: str, is_ipv4: bool, method: str,
                      config: typing.DefaultDict[str, typing.List[str]], result: AutoVivification):
         network = '{}.network'.format(name)
         netdev = '{}.netdev'.format(name)
@@ -175,7 +175,7 @@ class Converter:
                     result[network]['RoutingPolicyRule'] = rules
 
         # DHCP
-        if dhcp == 'dhcp':
+        if method == 'dhcp':
             if 'DHCP' in result[network]['Network']:
                 current = result[network]['Network']['DHCP']
             else:
@@ -197,7 +197,7 @@ class Converter:
     def convert_file(self, f: typing.IO, result: AutoVivification):
         current_iface = None
         current_ipv4 = True
-        current_type = 'static'
+        current_method = 'static'
         current_configs = defaultdict(list)
         for line in f:
             line = line.strip()
@@ -209,19 +209,19 @@ class Converter:
             elif line.startswith('iface'):
                 if current_iface is not None:
                     result = self.handle_iface(
-                        current_iface, current_ipv4, current_type, current_configs, result)
+                        current_iface, current_ipv4, current_method, current_configs, result)
                     current_configs = defaultdict(list)
 
                 current_iface = parts[1]
                 current_ipv4 = parts[2] == 'inet'
-                current_type = parts[3]
+                current_method = parts[3]
             elif current_iface is not None:
                 key = parts[0]
                 value = ' '.join(parts[1:])
                 current_configs[key].append(value)
         if current_iface is not None:
             result = self.handle_iface(
-                current_iface, current_ipv4, current_type, current_configs, result)
+                current_iface, current_ipv4, current_method, current_configs, result)
             current_configs = defaultdict(list)
         return result
 

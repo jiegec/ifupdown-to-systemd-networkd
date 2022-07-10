@@ -171,9 +171,9 @@ def handle_iface(name: str, is_ipv4: bool, dhcp: str,
                     elif parts[i] == 'table':
                         table = parts[i+1]
                         if use_table_name:
-                            route['Table'] = table
+                            rule['Table'] = table
                         else:
-                            route['Table'] = table_mapping[table]
+                            rule['Table'] = table_mapping[table]
                         i += 2
                     else:
                         i += 1

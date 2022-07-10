@@ -193,6 +193,16 @@ class Converter:
                 elif current == 'ipv4':
                     current = 'yes'
             result[network]['Network']['DHCP'] = current
+
+            if is_ipv4:
+                if 'hostname' in config:
+                    result[network]['DHCPv4']['Hostname'] = config['hostname'][0]
+                if 'metric' in config:
+                    result[network]['DHCPv4']['RouteMetric'] = config['metric'][0]
+                if 'vendor' in config:
+                    result[network]['DHCPv4']['VendorClassIdentifier'] = config['vendor'][0]
+                if 'client' in config:
+                    result[network]['DHCPv4']['UserClass'] = config['client'][0]
         return result
 
     def convert_file(self, f: typing.IO, result: AutoVivification):

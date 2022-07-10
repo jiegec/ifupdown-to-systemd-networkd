@@ -9,3 +9,9 @@ MACAddress = 00:11:22:33:44:55
 [Network]
 DHCP = ipv4
 
+[DHCPv4]
+Hostname = my_hostname
+RouteMetric = 1024
+VendorClassIdentifier = 0x1234
+UserClass = 0x5678
+

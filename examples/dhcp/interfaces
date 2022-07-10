@@ -1,0 +1,9 @@
+auto eth0
+iface eth0 inet dhcp
+    hostname my_hostname
+    metric 1024
+    leasehours 10
+    leasetime 3600
+    vendor 0x1234
+    client 0x5678
+    hwaddress ether 00:11:22:33:44:55

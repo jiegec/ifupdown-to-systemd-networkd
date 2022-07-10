@@ -1,0 +1,11 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[Match]
+Name = eth0
+
+[Link]
+MACAddress = 00:11:22:33:44:55
+
+[Network]
+DHCP = ipv4
+

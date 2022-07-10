@@ -232,6 +232,7 @@ def convert(interfaces: str, output: str):
                                 data += '{} = {}\n'.format(key, val)
                         else:
                             data += '{} = {}\n'.format(key, value)
+                    data += '\n'
             else:
                 # single section
                 data += '[{}]\n'.format(section)
@@ -244,7 +245,7 @@ def convert(interfaces: str, output: str):
                             data += '{} = {}\n'.format(key, val)
                     else:
                         data += '{} = {}\n'.format(key, value)
-            data += '\n'
+                data += '\n'
 
         dest = os.path.join(output, file)
 

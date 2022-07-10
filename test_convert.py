@@ -2,6 +2,10 @@ import convert
 import io
 
 
+def create_converter():
+    return convert.Converter('', '', '', '', 248)
+
+
 def test_simple():
     config = '''
     auto eth0
@@ -14,11 +18,11 @@ def test_simple():
     '''
 
     f = io.StringIO(config)
-    converter = convert.Converter('', '', '', '')
+    converter = create_converter()
     result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Match']['Name'] == 'eth0'
-    assert network['Network']['Address'] == '192.168.0.100/24'
+    assert network['Address']['Address'] == '192.168.0.100/24'
     assert network['Network']['Gateway'] == '192.168.0.1'
     assert network['Link']['MTUBytes'] == '1024'
     assert network['Link']['MACAddress'] == '00:11:22:33:44:55'
@@ -33,7 +37,7 @@ def test_bonding():
 
     f = io.StringIO(config)
 
-    converter = convert.Converter('', '', '', '')
+    converter = create_converter()
     result = converter.convert_file(f, convert.AutoVivification())
     netdev = result['bond0.netdev']
     assert netdev['NetDev']['Name'] == 'bond0'
@@ -55,13 +59,13 @@ def test_vlan():
 
     f = io.StringIO(config)
 
-    converter = convert.Converter('', '', '', '')
+    converter = create_converter()
     result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Network']['VLAN'] == ['eth0.123']
 
     network = result['eth0.123.network']
-    assert network['Network']['Address'] == '192.168.0.1/24'
+    assert network['Address']['Address'] == '192.168.0.1/24'
 
     netdev = result['eth0.123.netdev']
     assert netdev['NetDev']['Name'] == 'eth0.123'
@@ -80,7 +84,7 @@ def test_custom_routes():
 
     f = io.StringIO(config)
 
-    converter = convert.Converter('', '', '', '')
+    converter = create_converter()
     result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Match']['Name'] == 'eth0'
@@ -106,7 +110,7 @@ def test_duplicate_vlan():
 
     f = io.StringIO(config)
 
-    converter = convert.Converter('', '', '', '')
+    converter = create_converter()
     result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Match']['Name'] == 'eth0'

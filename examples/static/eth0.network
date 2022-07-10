@@ -3,8 +3,13 @@
 [Match]
 Name = eth0
 
-[Network]
+[Address]
 Address = 192.168.0.100/224
+Scope = link
+Peer = 192.168.0.2
+RouteMetric = 1024
+
+[Network]
 Gateway = 192.168.0.1
 
 [Link]

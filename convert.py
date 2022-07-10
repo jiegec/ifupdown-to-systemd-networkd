@@ -49,11 +49,19 @@ class Converter:
             # address and netmask
             netmask = ipaddress.IPv4Network(
                 '0.0.0.0/{}'.format(config['netmask'][0]))
-            result[network]['Network']['Address'] = '{}/{}'.format(
+            result[network]['Address']['Address'] = '{}/{}'.format(
                 config['address'][0], netmask.prefixlen)
         elif 'address' in config:
             # only address
-            result[network]['Network']['Address'] = config['address'][0]
+            result[network]['Address']['Address'] = config['address'][0]
+
+        if method == 'static':
+            if 'scope' in config:
+                result[network]['Address']['Scope'] = config['scope'][0]
+            if 'pointopoint' in config:
+                result[network]['Address']['Peer'] = config['pointopoint'][0]
+            if 'metric' in config:
+                result[network]['Address']['RouteMetric'] = config['metric'][0]
 
         if 'gateway' in config:
             result[network]['Network']['Gateway'] = config['gateway'][0]

@@ -14,8 +14,8 @@ def test_simple():
     '''
 
     f = io.StringIO(config)
-
-    result = convert.convert_file(f, convert.AutoVivification())
+    converter = convert.Converter('', '', '', '')
+    result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Match']['Name'] == 'eth0'
     assert network['Network']['Address'] == '192.168.0.100/24'
@@ -33,7 +33,8 @@ def test_bonding():
 
     f = io.StringIO(config)
 
-    result = convert.convert_file(f, convert.AutoVivification())
+    converter = convert.Converter('', '', '', '')
+    result = converter.convert_file(f, convert.AutoVivification())
     netdev = result['bond0.netdev']
     assert netdev['NetDev']['Name'] == 'bond0'
     assert netdev['NetDev']['Kind'] == 'bond'
@@ -54,7 +55,8 @@ def test_vlan():
 
     f = io.StringIO(config)
 
-    result = convert.convert_file(f, convert.AutoVivification())
+    converter = convert.Converter('', '', '', '')
+    result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Network']['VLAN'] == ['eth0.123']
 
@@ -78,7 +80,8 @@ def test_custom_routes():
 
     f = io.StringIO(config)
 
-    result = convert.convert_file(f, convert.AutoVivification())
+    converter = convert.Converter('', '', '', '')
+    result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Match']['Name'] == 'eth0'
 
@@ -92,6 +95,7 @@ def test_custom_routes():
     assert network['RoutingPolicyRule'][0]['From'] == '192.168.0.2'
     assert network['RoutingPolicyRule'][0]['Table'] == 'some_table'
 
+
 def test_duplicate_vlan():
     config = '''
     auto eth0.123
@@ -102,7 +106,8 @@ def test_duplicate_vlan():
 
     f = io.StringIO(config)
 
-    result = convert.convert_file(f, convert.AutoVivification())
+    converter = convert.Converter('', '', '', '')
+    result = converter.convert_file(f, convert.AutoVivification())
     network = result['eth0.network']
     assert network['Match']['Name'] == 'eth0'
     assert network['Network']['VLAN'] == ['eth0.123']

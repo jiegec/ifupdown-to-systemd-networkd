@@ -1,0 +1,18 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[Match]
+Name = eth0
+
+[Route]
+Destination = 0.0.0.0/0
+Gateway = 192.168.0.1
+
+[Route]
+Destination = 0.0.0.0/0
+Gateway = 192.168.1.1
+Table = some_table
+
+[RoutingPolicyRule]
+From = 192.168.0.2
+Table = some_table
+

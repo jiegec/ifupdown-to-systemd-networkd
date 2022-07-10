@@ -1,0 +1,9 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[NetDev]
+Name = eth0.123
+Kind = vlan
+
+[VLAN]
+Id = 123
+

@@ -1,0 +1,13 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[Match]
+Name = eth0
+
+[Network]
+Address = 192.168.0.100/24
+Gateway = 192.168.0.1
+
+[Link]
+MACAddress = 00:11:22:33:44:55
+MTUBytes = 1024
+

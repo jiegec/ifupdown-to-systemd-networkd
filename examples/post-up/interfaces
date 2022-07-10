@@ -1,0 +1,5 @@
+auto eth0
+iface eth0 inet static
+    post-up ip route add default via 192.168.0.1
+    post-up ip route add default via 192.168.1.1 table some_table
+    post-up ip rule add from 192.168.0.2 table some_table

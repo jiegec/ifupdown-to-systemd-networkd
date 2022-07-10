@@ -285,7 +285,7 @@ def convert_routes(tables: str, conf: str):
     with open(tables, 'r') as f:
         for line in f:
             line = line.strip()
-            if line[0] == '#':
+            if len(line) == 0 or line[0] == '#':
                 continue
 
             parts = line.split('\t')

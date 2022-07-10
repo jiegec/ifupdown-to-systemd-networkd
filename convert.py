@@ -144,7 +144,10 @@ def handle_iface(name: str, is_ipv4: bool, dhcp: str,
                         i += 2
                     elif parts[i] == 'table':
                         table = parts[i+1]
-                        route['Table'] = table
+                        if use_table_name:
+                            route['Table'] = table
+                        else:
+                            route['Table'] = table_mapping[table]
                         i += 2
                     else:
                         i += 1
@@ -167,7 +170,10 @@ def handle_iface(name: str, is_ipv4: bool, dhcp: str,
                         i += 2
                     elif parts[i] == 'table':
                         table = parts[i+1]
-                        rule['Table'] = table
+                        if use_table_name:
+                            route['Table'] = table
+                        else:
+                            route['Table'] = table_mapping[table]
                         i += 2
                     else:
                         i += 1

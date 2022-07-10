@@ -3,6 +3,7 @@ import configparser
 import ipaddress
 import os
 import subprocess
+import typing
 import click
 import io
 from collections import defaultdict
@@ -21,7 +22,7 @@ class AutoVivification(dict):
             return value
 
 
-def handle_iface(name, is_ipv4, dhcp, config, result):
+def handle_iface(name: str, is_ipv4: bool, dhcp: str, config: typing.DefaultDict[str, typing.List[str]], result: AutoVivification):
     network = '{}.network'.format(name)
     netdev = '{}.netdev'.format(name)
     # Match Block
@@ -30,23 +31,24 @@ def handle_iface(name, is_ipv4, dhcp, config, result):
     # Configs
     if 'address' in config and 'netmask' in config:
         # address and netmask
-        netmask = ipaddress.IPv4Network('0.0.0.0/{}'.format(config['netmask']))
+        netmask = ipaddress.IPv4Network(
+            '0.0.0.0/{}'.format(config['netmask'][0]))
         result[network]['Network']['Address'] = '{}/{}'.format(
-            config['address'], netmask.prefixlen)
+            config['address'][0], netmask.prefixlen)
     elif 'address' in config:
         # only address
-        result[network]['Network']['Address'] = config['address']
+        result[network]['Network']['Address'] = config['address'][0]
 
     if 'gateway' in config:
-        result[network]['Network']['Gateway'] = config['gateway']
+        result[network]['Network']['Gateway'] = config['gateway'][0]
     if 'hwaddress' in config:
-        value = config['hwaddress']
+        value = config['hwaddress'][0]
         parts = value.split(' ')
         # hwaddress ether
         if parts[0] == 'ether':
             result[network]['Link']['MACAddress'] = parts[1]
     if 'mtu' in config:
-        result[network]['Link']['MTUBytes'] = config['mtu']
+        result[network]['Link']['MTUBytes'] = config['mtu'][0]
 
     # VLAN:
     if '.' in name:
@@ -71,27 +73,85 @@ def handle_iface(name, is_ipv4, dhcp, config, result):
             vlan.append(name)
         result[raw_network]['Network']['VLAN'] = vlan
 
-
     # Bonding
     if 'bond-slaves' in config:
         result[netdev]['NetDev']['Name'] = name
         result[netdev]['NetDev']['Kind'] = 'bond'
 
         # add slaves
-        for intf in config['bond-slaves'].split(' '):
+        for intf in config['bond-slaves'][0].split(' '):
             result['{}.network'.format(intf)]['Network']['Bond'] = name
     if 'bond-xmit-hash-policy' in config:
-        result[netdev]['Bond']['TransmitHashPolicy'] = config['bond-xmit-hash-policy']
+        result[netdev]['Bond']['TransmitHashPolicy'] = config['bond-xmit-hash-policy'][0]
     if 'bond-mode' in config:
-        result[netdev]['Bond']['Mode'] = config['bond-mode']
+        result[netdev]['Bond']['Mode'] = config['bond-mode'][0]
     if 'bond-miimon' in config:
-        result[netdev]['Bond']['MIIMonitorSec'] = float(config['bond-miimon']) / 1000
+        result[netdev]['Bond']['MIIMonitorSec'] = float(
+            config['bond-miimon'][0]) / 1000
     if 'bond-lacp-rate' in config:
-        result[netdev]['Bond']['LACPTransmitRate'] = config['bond-lacp-rate']
+        result[netdev]['Bond']['LACPTransmitRate'] = config['bond-lacp-rate'][0]
     if 'ad_actor_sys_prio' in config:
-        result[netdev]['Bond']['AdActorSystemPriority'] = config['ad_actor_sys_prio']
+        result[netdev]['Bond']['AdActorSystemPriority'] = config['ad_actor_sys_prio'][0]
     if 'ad_select' in config:
-        result[netdev]['Bond']['BondAdSelect'] = config['ad_select']
+        result[netdev]['Bond']['BondAdSelect'] = config['ad_select'][0]
+
+    # Custom routes
+    if 'post-up' in config:
+        for command in config['post-up']:
+            parts = command.split(' ')
+
+            if parts[0] == 'ip' and parts[1] == 'route' and parts[2] == 'add':
+                # ip route add
+                route = {}
+                destination = parts[3]
+                if destination == 'default':
+                    destination = '0.0.0.0/0'
+
+                route['Destination'] = destination
+
+                i = 4
+                while i < len(parts):
+                    if parts[i] == 'via':
+                        gateway = parts[i+1]
+                        route['Gateway'] = gateway
+                        i += 2
+                    elif parts[i] == 'table':
+                        table = parts[i+1]
+                        route['Table'] = table
+                        i += 2
+                    else:
+                        i += 1
+
+                # append to list of routes
+                routes = result[network]['Route']
+                if type(routes) is AutoVivification:
+                    routes = [route]
+                else:
+                    routes.append(route)
+                result[network]['Route'] = routes
+            elif parts[0] == 'ip' and parts[1] == 'rule' and parts[2] == 'add':
+                # ip rule add
+                rule = {}
+                i = 3
+                while i < len(parts):
+                    if parts[i] == 'from':
+                        rule_from = parts[i+1]
+                        rule['From'] = rule_from
+                        i += 2
+                    elif parts[i] == 'table':
+                        table = parts[i+1]
+                        rule['Table'] = table
+                        i += 2
+                    else:
+                        i += 1
+
+                # append to list of rules
+                rules = result[network]['RoutingPolicyRule']
+                if type(rules) is AutoVivification:
+                    rules = [rule]
+                else:
+                    rules.append(rule)
+                result[network]['RoutingPolicyRule'] = rules
 
     # DHCP
     if dhcp == 'dhcp':
@@ -114,11 +174,11 @@ def handle_iface(name, is_ipv4, dhcp, config, result):
     return result
 
 
-def convert_file(f, result):
+def convert_file(f: typing.IO, result: AutoVivification):
     current_iface = None
     current_ipv4 = True
     current_type = 'static'
-    current_configs = {}
+    current_configs = defaultdict(list)
     for line in f:
         line = line.strip()
         parts = line.split(' ')
@@ -130,7 +190,7 @@ def convert_file(f, result):
             if current_iface is not None:
                 result = handle_iface(
                     current_iface, current_ipv4, current_type, current_configs, result)
-                current_configs = {}
+                current_configs = defaultdict(list)
 
             current_iface = parts[1]
             current_ipv4 = parts[2] == 'inet'
@@ -138,15 +198,15 @@ def convert_file(f, result):
         elif current_iface is not None:
             key = parts[0]
             value = ' '.join(parts[1:])
-            current_configs[key] = value
+            current_configs[key].append(value)
     if current_iface is not None:
         result = handle_iface(
             current_iface, current_ipv4, current_type, current_configs, result)
-        current_configs = {}
+        current_configs = defaultdict(list)
     return result
 
 
-def convert(interfaces, output):
+def convert(interfaces: str, output: str):
     print("Converting {} to systemd-networkd configs in {}".format(
         interfaces, output))
     # filename -> dict
@@ -158,17 +218,32 @@ def convert(interfaces, output):
         # let's do it ourselves
         data = ''
         for section in result[file]:
-            data += '[{}]\n'.format(section)
-
             content = result[file][section]
-            for key in content:
-                value = content[key]
-                if type(value) is list:
-                    # repeat each value
-                    for val in value:
-                        data += '{} = {}\n'.format(key, val)
-                else:
-                    data += '{} = {}\n'.format(key, value)
+            if type(content) is list:
+                # multiple sections with same key
+                for inner in content:
+                    data += '[{}]\n'.format(section)
+
+                    for key in inner:
+                        value = inner[key]
+                        if type(value) is list:
+                            # repeat each value
+                            for val in value:
+                                data += '{} = {}\n'.format(key, val)
+                        else:
+                            data += '{} = {}\n'.format(key, value)
+            else:
+                # single section
+                data += '[{}]\n'.format(section)
+
+                for key in content:
+                    value = content[key]
+                    if type(value) is list:
+                        # repeat each value
+                        for val in value:
+                            data += '{} = {}\n'.format(key, val)
+                    else:
+                        data += '{} = {}\n'.format(key, value)
             data += '\n'
 
         dest = os.path.join(output, file)
@@ -177,8 +252,9 @@ def convert(interfaces, output):
             print('Diffing {}'.format(dest))
             proc = subprocess.Popen(
                 args=['diff', '-u', dest, '-'], executable='diff', stdin=subprocess.PIPE)
-            proc.stdin.write(data.encode('utf-8'))
-            proc.stdin.close()
+            if proc.stdin is not None:
+                proc.stdin.write(data.encode('utf-8'))
+                proc.stdin.close()
             proc.wait()
         else:
             print('New configuration {}'.format(dest))

@@ -23,6 +23,7 @@ def test_simple():
     assert network['Link']['MTUBytes'] == '1024'
     assert network['Link']['MACAddress'] == '00:11:22:33:44:55'
 
+
 def test_bonding():
     config = '''
     auto bond0
@@ -42,6 +43,7 @@ def test_bonding():
 
     network = result['eth2.network']
     assert network['Network']['Bond'] == 'bond0'
+
 
 def test_vlan():
     config = '''
@@ -63,3 +65,29 @@ def test_vlan():
     assert netdev['NetDev']['Name'] == 'eth0.123'
     assert netdev['NetDev']['Kind'] == 'vlan'
     assert netdev['VLAN']['Id'] == 123
+
+
+def test_custom_routes():
+    config = '''
+    auto eth0
+    iface eth0 inet static
+        post-up ip route add default via 192.168.0.1
+        post-up ip route add default via 192.168.1.1 table some_table
+        post-up ip rule add from 192.168.0.2 table some_table
+    '''
+
+    f = io.StringIO(config)
+
+    result = convert.convert_file(f, convert.AutoVivification())
+    network = result['eth0.network']
+    assert network['Match']['Name'] == 'eth0'
+
+    assert network['Route'][0]['Destination'] == '0.0.0.0/0'
+    assert network['Route'][0]['Gateway'] == '192.168.0.1'
+
+    assert network['Route'][1]['Destination'] == '0.0.0.0/0'
+    assert network['Route'][1]['Gateway'] == '192.168.1.1'
+    assert network['Route'][1]['Table'] == 'some_table'
+
+    assert network['RoutingPolicyRule'][0]['From'] == '192.168.0.2'
+    assert network['RoutingPolicyRule'][0]['Table'] == 'some_table'

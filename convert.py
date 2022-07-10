@@ -217,6 +217,8 @@ def convert(interfaces: str, output: str):
         # configparse do not support repeated keys
         # let's do it ourselves
         data = ''
+        data += '# Generated from /etc/network/interfaces\n'
+        data += '# Using jiegec/ifupdown-to-systemd-networkd\n'
         for section in result[file]:
             content = result[file][section]
             if type(content) is list:

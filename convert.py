@@ -22,6 +22,30 @@ class AutoVivification(dict):
             return value
 
 
+def ask_write_file(dest: str, data: str):
+    if os.path.exists(dest):
+        # check if file differs
+        orig = open(dest, 'r').read()
+        if orig == data:
+            print('Configuration {} not changed'.format(dest))
+            return
+
+        print('Showing diff of {}'.format(dest))
+        proc = subprocess.Popen(
+            args=['diff', '-u', dest, '-'], executable='diff', stdin=subprocess.PIPE)
+        if proc.stdin is not None:
+            proc.stdin.write(data.encode('utf-8'))
+            proc.stdin.close()
+        proc.wait()
+    else:
+        print('New configuration {}'.format(dest))
+        print(data)
+
+    if click.confirm('Write to {}'.format(dest)):
+        with open(dest, 'w') as f:
+            f.write(data)
+
+
 def handle_iface(name: str, is_ipv4: bool, dhcp: str, config: typing.DefaultDict[str, typing.List[str]], result: AutoVivification):
     network = '{}.network'.format(name)
     netdev = '{}.netdev'.format(name)
@@ -251,36 +275,47 @@ def convert(interfaces: str, output: str):
 
         dest = os.path.join(output, file)
 
-        if os.path.exists(dest):
-            # check if file differs
-            orig = open(dest, 'r').read()
-            if orig == data:
-                print('Configuration {} not changed'.format(dest))
+        ask_write_file(dest, data)
+
+
+def convert_routes(tables: str, conf: str):
+    data = '[Network]\n'
+    data += 'RouteTable='
+    entries = []
+    with open(tables, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line[0] == '#':
                 continue
 
-            print('Showing diff of {}'.format(dest))
-            proc = subprocess.Popen(
-                args=['diff', '-u', dest, '-'], executable='diff', stdin=subprocess.PIPE)
-            if proc.stdin is not None:
-                proc.stdin.write(data.encode('utf-8'))
-                proc.stdin.close()
-            proc.wait()
-        else:
-            print('New configuration {}'.format(dest))
-            print(data)
-
-        if click.confirm('Write to {}'.format(dest)):
-            with open(dest, 'w') as f:
-                f.write(data)
+            parts = line.split('\t')
+            if len(parts) == 2:
+                table_id = parts[0]
+                table_name = parts[1]
+                if table_name in ('local', 'main', 'default', 'unspec'):
+                    continue
+                entries.append('{}:{}'.format(table_name, table_id))
+    data += ' '.join(entries)
+    data += '\n'
+    ask_write_file(conf, data)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Convert ifupdown configs to systemd-networkd")
     parser.add_argument('--interfaces', required=False,
-                        help='path to ifupdown config, default to /etc/network/interfaces', default='/etc/network/interfaces')
+                        help='path to ifupdown config, default to /etc/network/interfaces',
+                        default='/etc/network/interfaces')
+    parser.add_argument('--tables', required=False,
+                        help='path to iproute2 rt_tables, default to /etc/iproute2/rt_tables',
+                        default='/etc/iproute2/rt_tables')
     parser.add_argument('--output', required=False,
-                        help='output folder for systemd-networkd config, default to /etc/systemd/network', default='/etc/systemd/network')
+                        help='output folder for systemd-networkd network config, default to /etc/systemd/network',
+                        default='/etc/systemd/network')
+    parser.add_argument('--config', required=False,
+                        help='output config for systemd-networkd service config, default to /etc/systemd/networkd.conf.d/tables.conf',
+                        default='/etc/systemd/networkd.conf.d/tables.conf')
     args = parser.parse_args()
 
     convert(args.interfaces, args.output)
+    convert_routes(args.tables, args.config)

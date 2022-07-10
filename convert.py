@@ -8,6 +8,7 @@ import click
 import io
 from collections import defaultdict
 
+
 # https://stackoverflow.com/a/2600847/2148614
 
 
@@ -46,7 +47,9 @@ def ask_write_file(dest: str, data: str):
             f.write(data)
 
 
-def handle_iface(name: str, is_ipv4: bool, dhcp: str, config: typing.DefaultDict[str, typing.List[str]], result: AutoVivification):
+def handle_iface(name: str, is_ipv4: bool, dhcp: str,
+                 config: typing.DefaultDict[str, typing.List[str]], result: AutoVivification,
+                 use_table_name: bool, table_mapping: typing.Dict[str, int]):
     network = '{}.network'.format(name)
     netdev = '{}.netdev'.format(name)
     # Match Block
@@ -198,7 +201,7 @@ def handle_iface(name: str, is_ipv4: bool, dhcp: str, config: typing.DefaultDict
     return result
 
 
-def convert_file(f: typing.IO, result: AutoVivification):
+def convert_file(f: typing.IO, result: AutoVivification, use_table_name: bool = True, table_mapping: typing.Dict[str, int] = {}):
     current_iface = None
     current_ipv4 = True
     current_type = 'static'
@@ -213,7 +216,7 @@ def convert_file(f: typing.IO, result: AutoVivification):
         elif line.startswith('iface'):
             if current_iface is not None:
                 result = handle_iface(
-                    current_iface, current_ipv4, current_type, current_configs, result)
+                    current_iface, current_ipv4, current_type, current_configs, result, use_table_name, table_mapping)
                 current_configs = defaultdict(list)
 
             current_iface = parts[1]
@@ -225,18 +228,18 @@ def convert_file(f: typing.IO, result: AutoVivification):
             current_configs[key].append(value)
     if current_iface is not None:
         result = handle_iface(
-            current_iface, current_ipv4, current_type, current_configs, result)
+            current_iface, current_ipv4, current_type, current_configs, result, use_table_name, table_mapping)
         current_configs = defaultdict(list)
     return result
 
 
-def convert(interfaces: str, output: str):
+def convert(interfaces: str, output: str, use_table_name: bool, table_mapping: typing.Dict[str, int]):
     print("Converting {} to systemd-networkd configs in {}".format(
         interfaces, output))
     # filename -> dict
     result = AutoVivification()
     with open(interfaces, 'r') as f:
-        result = convert_file(f, result)
+        result = convert_file(f, result, use_table_name, table_mapping)
     for file in result:
         # configparse do not support repeated keys
         # let's do it ourselves
@@ -278,10 +281,9 @@ def convert(interfaces: str, output: str):
         ask_write_file(dest, data)
 
 
-def convert_routes(tables: str, conf: str):
-    data = '[Network]\n'
-    data += 'RouteTable='
-    entries = []
+def get_routes(tables: str):
+    """Collect custom table names from /etc/iproute2/rt_tables"""
+    result = {}
     with open(tables, 'r') as f:
         for line in f:
             line = line.strip()
@@ -294,10 +296,30 @@ def convert_routes(tables: str, conf: str):
                 table_name = parts[1]
                 if table_name in ('local', 'main', 'default', 'unspec'):
                     continue
-                entries.append('{}:{}'.format(table_name, table_id))
+                result[table_name] = table_id
+    return result
+
+
+def convert_routes(tables: str, conf: str):
+    data = '[Network]\n'
+    data += 'RouteTable='
+    routes = get_routes(tables)
+    entries = []
+    for name in routes:
+        entries.append('{}:{}'.format(name, routes[name]))
     data += ' '.join(entries)
     data += '\n'
     ask_write_file(conf, data)
+    return routes
+
+
+def probe_systemd():
+    output = subprocess.check_output(executable='systemctl', args=[
+                                     'systemctl', '--version'])
+    lines = list(output.decode('utf-8').split('\n'))
+    version = int(lines[0].split(' ')[1])
+    print('Found systemd version {}'.format(version))
+    return version
 
 
 if __name__ == '__main__':
@@ -317,5 +339,12 @@ if __name__ == '__main__':
                         default='/etc/systemd/networkd.conf.d/tables.conf')
     args = parser.parse_args()
 
-    convert(args.interfaces, args.output)
-    convert_routes(args.tables, args.config)
+    systemd_version = probe_systemd()
+    # https://github.com/systemd/systemd/commit/c038ce4606f93d9e58147f87703125270fb744e2
+    if systemd_version >= 248:
+        table_mapping = convert_routes(args.tables, args.config)
+        use_table_name = True
+    else:
+        table_mapping = {}
+        use_table_name = False
+    convert(args.interfaces, args.output, use_table_name, table_mapping)

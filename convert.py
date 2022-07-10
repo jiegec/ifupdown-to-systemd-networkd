@@ -252,7 +252,13 @@ def convert(interfaces: str, output: str):
         dest = os.path.join(output, file)
 
         if os.path.exists(dest):
-            print('Diffing {}'.format(dest))
+            # check if file differs
+            orig = open(dest, 'r').read()
+            if orig == data:
+                print('Configuration {} not changed'.format(dest))
+                continue
+
+            print('Showing diff of {}'.format(dest))
             proc = subprocess.Popen(
                 args=['diff', '-u', dest, '-'], executable='diff', stdin=subprocess.PIPE)
             if proc.stdin is not None:

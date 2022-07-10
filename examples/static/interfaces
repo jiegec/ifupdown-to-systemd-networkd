@@ -1,0 +1,9 @@
+auto eth0
+iface eth0 inet static
+    address 192.168.0.100/224
+    metric 1024
+    gateway 192.168.0.1
+    pointopoint 192.168.0.2
+    hwaddress ether 00:11:22:33:44:55
+    mtu 1024
+    scope link

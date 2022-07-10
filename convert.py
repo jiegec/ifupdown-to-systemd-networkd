@@ -1,7 +1,6 @@
 import argparse
 import ipaddress
 import os
-import subprocess
 import typing
 from collections import defaultdict
 from utils import AutoVivification, ask_write_file, probe_systemd
@@ -17,19 +16,21 @@ class Converter:
     table_mapping: typing.Dict[str, int]
     systemd_version: int
 
-    def __init__(self, interfaces: str, tables: str, output: str, config: str) -> None:
+    def __init__(self, interfaces: str, tables: str, output: str, config: str, systemd_version: str) -> None:
         self.interfaces = interfaces
         self.tables = tables
         self.output = output
         self.config = config
         self.use_table_name = True
+        self.systemd_version = systemd_version
 
     def work(self):
-        self.systemd_version = probe_systemd()
+        if self.systemd_version is None:
+            self.systemd_version = probe_systemd()
         self.table_mapping = self.get_routes()
 
         # https://github.com/systemd/systemd/commit/c038ce4606f93d9e58147f87703125270fb744e2
-        if self.systemd_version >= 248:
+        if int(self.systemd_version) >= 248:
             self.convert_routes()
             self.use_table_name = True
         else:
@@ -316,8 +317,10 @@ if __name__ == '__main__':
     parser.add_argument('--config', required=False,
                         help='output config for systemd-networkd service config, default to /etc/systemd/networkd.conf.d/tables.conf',
                         default='/etc/systemd/networkd.conf.d/tables.conf')
+    parser.add_argument('--systemd-version', required=False,
+                        help='systemd version')
     args = parser.parse_args()
 
     converter = Converter(args.interfaces, args.tables,
-                          args.output, args.config)
+                          args.output, args.config, args.systemd_version)
     converter.work()

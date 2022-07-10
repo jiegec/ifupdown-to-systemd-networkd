@@ -351,6 +351,6 @@ if __name__ == '__main__':
         table_mapping = convert_routes(args.tables, args.config)
         use_table_name = True
     else:
-        table_mapping = {}
+        table_mapping = get_routes(args.tables)
         use_table_name = False
     convert(args.interfaces, args.output, use_table_name, table_mapping)

@@ -323,7 +323,7 @@ class Converter:
         ask_write_file(self.config, data)
 
 
-if __name__ == '__main__':
+def run():
     parser = argparse.ArgumentParser(
         description="Convert ifupdown configs to systemd-networkd")
     parser.add_argument('--interfaces', required=False,
@@ -345,3 +345,7 @@ if __name__ == '__main__':
     converter = Converter(args.interfaces, args.tables,
                           args.output, args.config, args.systemd_version)
     converter.work()
+
+
+if __name__ == '__main__':
+    run()

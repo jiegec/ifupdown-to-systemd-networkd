@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "migrate-to-systemd-networkd"
-version = "0.1.0"
+version = "2.0"
 description = ""
 authors = ["Jiajie Chen <c@jia.je>"]
 

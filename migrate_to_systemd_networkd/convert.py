@@ -3,7 +3,7 @@ import ipaddress
 import os
 import typing
 from collections import defaultdict
-from utils import AutoVivification, ask_write_file, probe_systemd
+from migrate_to_systemd_networkd.utils import AutoVivification, ask_write_file, probe_systemd
 
 
 class Converter:

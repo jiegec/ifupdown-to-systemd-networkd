@@ -105,19 +105,28 @@ class Converter:
             # add slaves
             for intf in config['bond-slaves'][0].split(' '):
                 result['{}.network'.format(intf)]['Network']['Bond'] = name
+                # Add match if the interfaces is not declared elsewhere
+                result['{}.network'.format(intf)]['Match']['Name'] = intf
         if 'bond-xmit-hash-policy' in config:
             result[netdev]['Bond']['TransmitHashPolicy'] = config['bond-xmit-hash-policy'][0]
         if 'bond-mode' in config:
-            result[netdev]['Bond']['Mode'] = config['bond-mode'][0]
+            policy = ['balance-rr', 'active-backup', 'balance-xor',
+                      'broadcast', '802.3ad', 'balance-tlb', 'balance-alb']
+            result[netdev]['Bond']['Mode'] = policy[int(
+                config['bond-mode'][0])]
         if 'bond-miimon' in config:
             result[netdev]['Bond']['MIIMonitorSec'] = float(
                 config['bond-miimon'][0]) / 1000
         if 'bond-lacp-rate' in config:
-            result[netdev]['Bond']['LACPTransmitRate'] = config['bond-lacp-rate'][0]
+            rate = {
+                "30": "slow",
+                "1": "fast"
+            }
+            result[netdev]['Bond']['LACPTransmitRate'] = rate[config['bond-lacp-rate'][0]]
         if 'ad_actor_sys_prio' in config:
             result[netdev]['Bond']['AdActorSystemPriority'] = config['ad_actor_sys_prio'][0]
         if 'ad_select' in config:
-            result[netdev]['Bond']['BondAdSelect'] = config['ad_select'][0]
+            result[netdev]['Bond']['AdSelect'] = config['ad_select'][0]
 
         # Custom routes
         if 'post-up' in config:

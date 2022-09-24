@@ -1,0 +1,8 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[Network]
+Bond = bond0
+
+[Match]
+Name = eno2
+

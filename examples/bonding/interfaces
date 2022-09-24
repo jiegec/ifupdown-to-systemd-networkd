@@ -1,7 +1,17 @@
-auto eth0
-iface eth0 inet static
-    address 192.168.0.100
-    netmask 255.255.255.0
-    gateway 192.168.0.1
-    hwaddress ether 00:11:22:33:44:55
-    mtu 1024
+auto bond0
+iface bond0 inet static
+    mtu 9000
+    bond-slaves eno1 eno2
+    # 802.3ad
+    bond-mode 4
+    # 100ms MII monitor
+    bond-miimon 100
+    # transmit LACPDUs every 1 second
+    bond-lacp-rate 1
+    # hash by layer 3 & 4
+    bond-xmit-hash-policy layer3+4
+    # 802.3ad priority
+    ad_actor_sys_prio 1
+    # 802.3ad selection logic
+    ad_select bandwidth
+    address 192.168.0.1/16

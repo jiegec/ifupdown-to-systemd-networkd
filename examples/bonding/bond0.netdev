@@ -1,0 +1,14 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[NetDev]
+Name = bond0
+Kind = bond
+
+[Bond]
+TransmitHashPolicy = layer3+4
+Mode = 802.3ad
+MIIMonitorSec = 0.1
+LACPTransmitRate = fast
+AdActorSystemPriority = 1
+AdSelect = bandwidth
+

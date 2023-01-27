@@ -361,6 +361,8 @@ class Converter:
         return result
 
     def convert_routes(self):
+        if len(self.table_mapping) == 0:
+            return
         data = "[Network]\n"
         data += "RouteTable="
         entries = []

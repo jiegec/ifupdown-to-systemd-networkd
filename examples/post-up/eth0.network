@@ -15,3 +15,4 @@ Table = some_table
 [RoutingPolicyRule]
 From = 192.168.0.2
 Table = some_table
+

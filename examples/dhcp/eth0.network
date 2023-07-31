@@ -14,3 +14,4 @@ Hostname = my_hostname
 RouteMetric = 1024
 VendorClassIdentifier = 0x1234
 UserClass = 0x5678
+

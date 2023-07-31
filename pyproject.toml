@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "migrate-to-systemd-networkd"
 version = "2.0"
-description = ""
+description = "Migrate network configuration to systemd networkd"
 authors = ["Jiajie Chen <c@jia.je>"]
 
 [tool.poetry.dependencies]

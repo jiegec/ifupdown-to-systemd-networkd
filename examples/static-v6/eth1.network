@@ -12,4 +12,5 @@ Address = fec0:0:0:1::2/64
 [Network]
 Gateway = 192.168.1.1
 Gateway = fec0:0:0:1::1
+IPv6AcceptRA = no
 

@@ -90,6 +90,10 @@ class Converter:
             else:
                 result[network]["Address"] = [address_config]
 
+        if method == "static" and not is_ipv4:
+            # inet6 static
+            result[network]["Network"]["IPv6AcceptRA"] = "no"
+
         if "gateway" in config:
             gateway = config["gateway"][0]
             if "Gateway" in result[network]["Network"]:

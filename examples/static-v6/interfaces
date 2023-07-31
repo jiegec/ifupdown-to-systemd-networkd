@@ -1,0 +1,10 @@
+auto eth0
+allow-hotplug eth1
+iface eth0 inet dhcp
+iface eth0 inet6 auto
+iface eth1 inet static
+    address 192.168.1.2/24
+    gateway 192.168.1.1
+iface eth1 inet6 static
+    address fec0:0:0:1::2/64
+    gateway fec0:0:0:1::1

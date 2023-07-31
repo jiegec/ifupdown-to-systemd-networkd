@@ -1,0 +1,15 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[Match]
+Name = eth1
+
+[Address]
+Address = 192.168.1.2/24
+
+[Address]
+Address = fec0:0:0:1::2/64
+
+[Network]
+Gateway = 192.168.1.1
+Gateway = fec0:0:0:1::1
+

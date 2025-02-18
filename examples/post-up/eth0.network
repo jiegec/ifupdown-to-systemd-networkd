@@ -3,6 +3,9 @@
 [Match]
 Name = eth0
 
+[IPv6AcceptRA]
+DHCPv6Client = no
+
 [Route]
 Destination = 0.0.0.0/0
 Gateway = 192.168.0.1

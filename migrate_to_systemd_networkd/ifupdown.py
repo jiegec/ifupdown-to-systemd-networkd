@@ -18,6 +18,7 @@ class Converter:
     config: str
 
     use_table_name: bool
+    disable_dhcpv6_client_on_ra: bool
     table_mapping: typing.Dict[str, int]
     systemd_version: int
 
@@ -34,6 +35,7 @@ class Converter:
         self.output = output
         self.config = config
         self.use_table_name = True
+        self.disable_dhcpv6_client_on_ra = True
         self.systemd_version = systemd_version
 
     def work(self):
@@ -42,11 +44,20 @@ class Converter:
         self.table_mapping = self.get_routes()
 
         # https://github.com/systemd/systemd/commit/c038ce4606f93d9e58147f87703125270fb744e2
+        # use table names instead of raw numbers
         if int(self.systemd_version) >= 248:
             self.convert_routes()
             self.use_table_name = True
         else:
             self.use_table_name = False
+
+        # https://github.com/systemd/systemd/issues/1982#issuecomment-667438651
+        # when dhcpv6 is not enabled, disable dhcpv6 even if ra is received
+        if int(self.systemd_version) >= 246:
+            self.disable_dhcpv6_client_on_ra = True
+        else:
+            self.disable_dhcpv6_client_on_ra = False
+
         self.convert()
 
     def handle_iface(
@@ -59,8 +70,15 @@ class Converter:
     ):
         network = "{}.network".format(name)
         netdev = "{}.netdev".format(name)
+
+        new_network = network not in result
+
         # Match Block
         result[network]["Match"]["Name"] = name
+
+        if self.disable_dhcpv6_client_on_ra and new_network:
+            # by default, set [IPv6AcceptRA] DHCPv6Client=no
+            result[network]["IPv6AcceptRA"]["DHCPv6Client"] = "no"
 
         # Configs
         if "address" in config:
@@ -91,7 +109,7 @@ class Converter:
                 result[network]["Address"] = [address_config]
 
         if method == "static" and not is_ipv4:
-            # inet6 static
+            # inet6 static, do not accept ra
             result[network]["Network"]["IPv6AcceptRA"] = "no"
 
         if "gateway" in config:
@@ -256,6 +274,14 @@ class Converter:
                     current = "ipv6"
                 elif current == "ipv4":
                     current = "yes"
+
+                # dhcpv6 requested, drop [IPv6AcceptRA] DHCPv6Client=no
+                if self.disable_dhcpv6_client_on_ra and "IPv6AcceptRA" in result[network]:
+                    if "DHCPv6Client" in result[network]["IPv6AcceptRA"]:
+                        del result[network]["IPv6AcceptRA"]["DHCPv6Client"]
+                    if len(result[network]["IPv6AcceptRA"]) == 0:
+                        del result[network]["IPv6AcceptRA"]
+
             result[network]["Network"]["DHCP"] = current
 
             if is_ipv4:

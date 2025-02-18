@@ -3,14 +3,11 @@
 [Match]
 Name = eth0
 
-[IPv6AcceptRA]
-DHCPv6Client = no
-
 [Link]
 MACAddress = 00:11:22:33:44:55
 
 [Network]
-DHCP = ipv4
+DHCP = yes
 
 [DHCPv4]
 Hostname = my_hostname

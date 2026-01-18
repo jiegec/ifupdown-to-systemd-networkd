@@ -1,0 +1,7 @@
+auto ens3
+iface ens3 inet static
+    address   144.31.98.19
+    netmask   255.255.255.255
+    gateway   10.0.0.1
+    hwaddress ether 52:54:00:84:9C:7E
+    dns-nameservers 1.1.1.1 2a09::

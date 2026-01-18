@@ -1,0 +1,17 @@
+# Generated from /etc/network/interfaces
+# Using jiegec/ifupdown-to-systemd-networkd
+[Match]
+Name = ens3
+
+[IPv6AcceptRA]
+DHCPv6Client = no
+
+[Address]
+Address = 144.31.98.19/32
+
+[Network]
+Gateway = 10.0.0.1
+
+[Link]
+MACAddress = 52:54:00:84:9C:7E
+

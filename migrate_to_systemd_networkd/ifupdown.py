@@ -305,6 +305,7 @@ class Converter:
         for line in f:
             line = line.strip()
             parts = line.split(" ")
+            parts = [part for part in parts if len(part) > 0]
 
             # comments
             if line.startswith("#"):

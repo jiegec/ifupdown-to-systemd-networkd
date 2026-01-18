@@ -127,6 +127,12 @@ class Converter:
                 result[network]["Link"]["MACAddress"] = parts[1]
         if "mtu" in config:
             result[network]["Link"]["MTUBytes"] = config["mtu"][0]
+        if "dns-nameservers" in config:
+            for dns in config["dns-nameservers"][0].split():
+                if "DNS" in result[network]["Network"]:
+                    result[network]["Network"]["DNS"].append(dns)
+                else:
+                    result[network]["Network"]["DNS"] = [dns]
 
         # VLAN:
         if "." in name:

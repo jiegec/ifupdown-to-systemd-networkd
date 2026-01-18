@@ -11,6 +11,8 @@ Address = 144.31.98.19/32
 
 [Network]
 Gateway = 10.0.0.1
+DNS = 1.1.1.1
+DNS = 2a09::
 
 [Link]
 MACAddress = 52:54:00:84:9C:7E

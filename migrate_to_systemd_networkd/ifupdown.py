@@ -86,10 +86,9 @@ class Converter:
             if "netmask" in config:
                 # address and netmask
                 netmask = ipaddress.IPv4Network(
-                    "0.0.0.0/{}".format(config["netmask"][0]))
-                address = "{}/{}".format(
-                    config["address"][0], netmask.prefixlen
+                    "0.0.0.0/{}".format(config["netmask"][0])
                 )
+                address = "{}/{}".format(config["address"][0], netmask.prefixlen)
             else:
                 # only address
                 address = config["address"][0]
@@ -138,7 +137,7 @@ class Converter:
         if "." in name:
             index = name.rfind(".")
             device = name[:index]
-            vlan_id = int(name[index + 1:])
+            vlan_id = int(name[index + 1 :])
 
             result[netdev]["NetDev"]["Name"] = name
             result[netdev]["NetDev"]["Kind"] = "vlan"
@@ -181,8 +180,7 @@ class Converter:
                 "balance-tlb",
                 "balance-alb",
             ]
-            result[netdev]["Bond"]["Mode"] = policy[int(
-                config["bond-mode"][0])]
+            result[netdev]["Bond"]["Mode"] = policy[int(config["bond-mode"][0])]
         if "bond-miimon" in config:
             result[netdev]["Bond"]["MIIMonitorSec"] = (
                 float(config["bond-miimon"][0]) / 1000
@@ -282,7 +280,10 @@ class Converter:
                     current = "yes"
 
                 # dhcpv6 requested, drop [IPv6AcceptRA] DHCPv6Client=no
-                if self.disable_dhcpv6_client_on_ra and "IPv6AcceptRA" in result[network]:
+                if (
+                    self.disable_dhcpv6_client_on_ra
+                    and "IPv6AcceptRA" in result[network]
+                ):
                     if "DHCPv6Client" in result[network]["IPv6AcceptRA"]:
                         del result[network]["IPv6AcceptRA"]["DHCPv6Client"]
                     if len(result[network]["IPv6AcceptRA"]) == 0:
@@ -456,8 +457,7 @@ def run():
         help="output config for systemd-networkd service config, default to /etc/systemd/networkd.conf.d/tables.conf",
         default="/etc/systemd/networkd.conf.d/tables.conf",
     )
-    parser.add_argument("--systemd-version", required=False,
-                        help="systemd version")
+    parser.add_argument("--systemd-version", required=False, help="systemd version")
     args = parser.parse_args()
 
     converter = Converter(

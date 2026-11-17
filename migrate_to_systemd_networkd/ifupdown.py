@@ -313,6 +313,9 @@ class Converter:
             parts = line.split(" ")
             parts = [part for part in parts if len(part) > 0]
 
+            # blank lines
+            if len(parts) == 0:
+                continue
             # comments
             if line.startswith("#"):
                 continue
